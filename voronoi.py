@@ -10,61 +10,125 @@ import matplotlib.cm as cm
 import numpy as np
 from scipy.spatial import Voronoi, voronoi_plot_2d
 
-# a traditional graph
-graphdataset = nx.Graph(nx.drawing.nx_pydot.read_dot("gd.gv"))
+def construct_graph(fname, embedding='force-directed'):
+    """
+    read the graph from .gv file
+    and construct the graph with the embedding algorithm
+    ------------------------------------------------------
+    input
+    fname: str, file name
+    embedding: str, embedding algorithm
+    ------------------------------------------------------
+    returns
+    graphdataset: nx.Graph object
+    pos: dict, {node(str): coordinates(np.array)}
+    """
+    # a traditional graph
+    graphdataset = nx.Graph(nx.drawing.nx_pydot.read_dot(fname))
 
-#change the weights into ints
-for i in graphdataset.edges:
-    graphdataset.edges[i]['weight']=int(re.findall(r'[0-9]+', (graphdataset.edges[i]['weight']))[0])
+    #change the weights into ints
+    for i in graphdataset.edges:
+        graphdataset.edges[i]['weight']=int(re.findall(r'[0-9]+', (graphdataset.edges[i]['weight']))[0])
 
-# set coordinates for vertices using force directed algorithm
-#size = float(len(set(partition.values())))
-pos = nx.spring_layout(graphdataset, k=1/math.pow(len(graphdataset), 0.3))
+    # set coordinates for vertices using the corresponding embedding algorithm
+    if(embedding == 'force-directed'):
+        pos = nx.spring_layout(graphdataset, k=1/math.pow(len(graphdataset), 0.3))
 
-# stack all coordinates for Voronoi
-coor_lis = []
-#point_lis = []
-for p in range(0, len(pos.keys())):
-    #point_lis.append(str(p))
-    coor_lis.append(pos[str(p)])
+    return graphdataset, pos
 
-#print(len(coor_lis))
-points = np.stack(coor_lis)
+def node_clustering(graph, algorithm='modularity'):
+    """
+    clustring all nodes with selected algorithm
+    ------------------------------------------------------
+    input
+    graph: nx.Graph object
+    algorithm: clustering algorithm
+    ------------------------------------------------------
+    returns
+    partition: dict, {node(str): community(int)}
+    """
+    # compute the best partition into communities
+    if(algorithm == 'modularity'):
+        partition = community.best_partition(graph)
 
+    return partition
 
-# create Voronoi object
-vor = Voronoi(points, furthest_site=False)
-#ridge_lis = vor.ridge_points.tolist()
-"""
-# compute the best partition into communities
-partition = community.best_partition(graphdataset)
+def merge_vor(vor, com_points):
+    representation = int(com_points[0])
+    # remove ridge between points from the same community
+    ridge_points_lis = vor.ridge_points.tolist()
+    pair_remove = []
+    for pair in ridge_points_lis:
+        if(str(pair[0]) in com_points and str(pair[1]) in com_points):
+            pair_remove.append(pair)
+    for pair in pair_remove:
+        ridge_points_lis.remove(pair)
+    vor.ridge_points = np.array(ridge_points_lis)
 
-commu = {}
-for p, com in partition.items():
-    if(com not in commu): commu[com] = [p]
-    else: commu[com].append(p)
+    # find regions/cells need to be merged
+    point_region_lis = vor.point_region.tolist()
+    region_lis = []
+    for p in com_points:
+        region_lis.append(vor.regions[point_region_lis[int(p)]])
 
-ridge_lis = vor.ridge_points.tolist()
-#print(len(ridge_lis))
+    # remove ridge between voronoi vertices according to the region_lis
+    for i in range(0, len(region_lis)-1):
+        for j in range(i+1, len(region_lis)):
+            vertice_lis = []
+            for v in region_lis[i]:
+                if(v in region_lis[j]): vertice_lis.append(v)
+            if(len(vertice_lis) == 0): continue
+            assert len(vertice_lis) == 2, "More than two common vertices between two region"
+            try: vor.ridge_vertices.remove(vertice_lis)
+            except:
+                v1, v2 = vertice_lis
+                vor.ridge_vertices.remove([v2, v1])
+    
+    # merge together all regions in region_lis 
+    # by adding vertices from other regions to the remaining region
+    for i in range(1, len(region_lis)):
+        for v in region_lis[i]:
+            if (v not in region_lis[0]):
+                region_lis[0].append(v)
+    vor.regions[point_region_lis[int(com_points[0])]] = region_lis[0]
+    for i in range(1, len(region_lis)):
+        vor.regions.remove(region_lis[i])
+    
+    region_index_remove = []
+    for i in range(1, len(com_points)):
+        region_index_remove.append(point_region_lis[int(com_points[i])])
+    for i in region_index_remove:
+        point_region_lis.remove(i)
+    vor.point_region = np.array(point_region_lis)
 
-for p_lis in commu.values():
-    for i in range(0, len(p_lis)-1):
-        try: ridge_lis.remove([int(p_lis[i]), int(p_lis[i+1])])
-        except: 
-            try: ridge_lis.remove([int(p_lis[i+1]), int(p_lis[i])])
-            except: continue
+    voronoi_plot_2d(vor, show_vertices=False)
+    plt.show()
+    return vor
 
-#print(len(ridge_lis))
-vor.ridge_points = np.array(ridge_lis)
-"""
-"""
-ridge_lis = vor.ridge_points.tolist()
-del ridge_lis[0]
-del ridge_lis[1]
-vor.ridge_points = np.array(ridge_lis)
-"""
+def draw_vor(pos, partition):
 
-# plot Voronoi diagram
-voronoi_plot_2d(vor, show_vertices=False)
+    # stack coordinates of nodes in coor_lis to draw the Voronoi Diagram
+    # indices of coor_lis correspond to the node
+    coor_lis = []
+    for p in range(0, len(pos.keys())):
+        coor_lis.append(pos[str(p)])
+    vor = Voronoi(np.stack(coor_lis))
+    
+    # build dictionary to store community info
+    # com_node = {community: [nodes in community]}
+    com_node = {}
+    for p, com in partition.items():
+        com_node.setdefault(com, []).append(p)
 
-plt.show()
+    # merge voronoi cells for each community
+    for p_lis in com_node.values():
+        vor = merge_vor(vor, p_lis)
+
+    # plot Voronoi diagram
+    voronoi_plot_2d(vor, show_vertices=False)
+    plt.show()
+    
+if(__name__ == '__main__'):
+    graphdataset, pos = construct_graph("gd.gv")
+    partition = node_clustering(graphdataset)
+    draw_vor(pos, partition)
