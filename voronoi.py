@@ -9,6 +9,11 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
 from scipy.spatial import Voronoi, voronoi_plot_2d
+from community import community_louvain
+from matplotlib.patches import Polygon
+
+
+
 
 def construct_graph(fname, embedding='force-directed'):
     """
@@ -49,7 +54,7 @@ def node_clustering(graph, algorithm='modularity'):
     """
     # compute the best partition into communities
     if(algorithm == 'modularity'):
-        partition = community.best_partition(graph)
+        partition = community_louvain.best_partition(graph)
 
     return partition
 
@@ -83,7 +88,7 @@ def merge_vor(vor, com_points):
             except:
                 v1, v2 = vertice_lis
                 vor.ridge_vertices.remove([v2, v1])
-    
+    #print(vor.ridge_vertices)
     # merge together all regions in region_lis 
     # by adding vertices from other regions to the remaining region
     for i in range(1, len(region_lis)):
@@ -101,6 +106,8 @@ def merge_vor(vor, com_points):
         point_region_lis.remove(i)
     vor.point_region = np.array(point_region_lis)
 
+    colorRegions(vor)
+    
     voronoi_plot_2d(vor, show_vertices=False)
     plt.show()
     return vor
@@ -120,14 +127,26 @@ def draw_vor(pos, partition):
     for p, com in partition.items():
         com_node.setdefault(com, []).append(p)
 
+    #print(vor.regions)
+
     # merge voronoi cells for each community
     for p_lis in com_node.values():
         vor = merge_vor(vor, p_lis)
 
+    #coloring
+
     # plot Voronoi diagram
+    
     voronoi_plot_2d(vor, show_vertices=False)
     plt.show()
     
+def colorRegions(vor):
+    for region in vor.regions:
+        if not -1 in region:
+            polygon = [vor.vertices[i] for i in region]
+            #plt.fill(*zip(*polygon), color = "green")
+            plt.fill(*zip(*polygon))
+
 if(__name__ == '__main__'):
     graphdataset, pos = construct_graph("gd.gv")
     partition = node_clustering(graphdataset)
