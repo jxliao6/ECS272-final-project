@@ -9,8 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
 from scipy.spatial import Voronoi, voronoi_plot_2d
-from community import community_louvain
-from matplotlib.patches import Polygon
+#from matplotlib.patches import Polygon
 
 
 
@@ -88,7 +87,6 @@ def merge_vor(vor, com_points):
             except:
                 v1, v2 = vertice_lis
                 vor.ridge_vertices.remove([v2, v1])
-    #print(vor.ridge_vertices)
     # merge together all regions in region_lis 
     # by adding vertices from other regions to the remaining region
     for i in range(1, len(region_lis)):
@@ -141,13 +139,101 @@ def draw_vor(pos, partition):
     plt.show()
     
 def colorRegions(vor):
+    region_id = {} #dict{key: id, value: list of vertices(==region)}
+    idcount = 0
     for region in vor.regions:
-        if not -1 in region:
-            polygon = [vor.vertices[i] for i in region]
-            #plt.fill(*zip(*polygon), color = "green")
-            plt.fill(*zip(*polygon))
+        region_id[idcount] = region
+        idcount += 1
+
+    #First create a stack containing list
+
+    neighbors = {} # dict{key: id, value: list of neighbors}
+    for id in region_id: # find the neighbors for each region
+        neighbors[id] = [] 
+        for id2 in region_id:
+            if id == id2:
+                continue
+            hasEdge = 0
+            for element in region_id[id2]:
+                if element in region_id[id]:
+                    hasEdge += 1
+            if hasEdge >= 2:
+                neighbors[id].append(id2)
+
+    # for neighbor in neighbors:
+    #     print(str(neighbor) + ": " + str(neighbors[neighbor]))
+    neighbors_copy = neighbors.copy()
+
+    id_stack = [] #coloring order
+    replace_dic = {}
+    #print(len(region_id))
+    while len(neighbors) > 0: #calculate the order of coloring
+        #tobe_removed = []
+        for id in neighbors:
+            if len(neighbors[id]) < 6: #First Case
+                id_stack.append(id)
+                #tobe_removed.append(id)
+                for id2 in neighbors:
+                    if id in neighbors[id2]:
+                        neighbors[id2].remove(id)
+                del neighbors[id]
+                break
+        
+        
+            # elif len(region_id[id]) == 5: #Second Case
+            #     n1 = -1
+            #     n2 = -1
+            #     for id2 in region_id[id]:
+            #         if len(region_id[id2]) <= 7:
+            #             for id3 in region_id[id2]:
+            #                 if len(region_id[id3] <= 7) and id2 not in region_id[id3]:
+            #                     n1 = id2
+            #                     n2 = id3
+            #                     for ids in region_id: # replace n1 and n2 with (n1,n2)
+            #                         if n1 in region_id[ids]:
+            #                             region_id[ids].remove(n1)
+            #                             region_id[ids].append(idcount)
+            #                         if n2 in region_id[ids]:
+            #                             region_id[ids].remove(n2)
+            #                             if idcount not in region_id[ids]:
+            #                                 region_id[ids].append(idcount)
+            #                     replace_dic[idcount] = [id2, id3]
+            #                     idcount += 1
+            #                     break
+            #     if n1 == -1 or n2 == -1: #debug
+            #         print("n1 and n2 not found!!!")
+            #     for
+
+        # for id in tobe_removed:
+        #     del neighbors[id]
+    #print(len(id_stack))
+    color_dict = {}
+    while len(id_stack) > 0: #deciding colors in each region
+        color_list = ['red','green','blue','orange','black','white']
+        id = id_stack.pop()
+        for id2 in neighbors_copy[id]:
+            if id2 in color_dict and color_dict[id2] in color_list:
+                color_list.remove(color_dict[id2])
+        color_dict[id] = color_list[0]
+
+    
+    for id in region_id: # assign color for each region
+        if not -1 in region_id[id]:
+            polygon = [vor.vertices[i] for i in region_id[id]]
+            plt.fill(*zip(*polygon), color = color_dict[id])
+
+
+# def colorRegions2(vor):
+#     regions, vertices = voronoi_finite_polygons_2d(vor)
+#     polygons = []
+#     for reg in regions:
+#         polygon = vertices[reg]
+#         polygons.append(polygon)
+    
+#     for poly in polygons:
+
 
 if(__name__ == '__main__'):
     graphdataset, pos = construct_graph("gd.gv")
-    partition = node_clustering(graphdataset)
+    partition = node_clustering(graphdataset) 
     draw_vor(pos, partition)
