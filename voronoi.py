@@ -53,7 +53,7 @@ def node_clustering(graph, algorithm='modularity'):
     """
     # compute the best partition into communities
     if(algorithm == 'modularity'):
-        partition = community_louvain.best_partition(graph)
+        partition = community.best_partition(graph)
 
     return partition
 
@@ -104,7 +104,7 @@ def merge_vor(vor, com_points):
         point_region_lis.remove(i)
     vor.point_region = np.array(point_region_lis)
 
-    colorRegions(vor)
+    #colorRegions(vor)
     
     voronoi_plot_2d(vor, show_vertices=False)
     plt.show()
@@ -235,5 +235,16 @@ def colorRegions(vor):
 
 if(__name__ == '__main__'):
     graphdataset, pos = construct_graph("gd.gv")
-    partition = node_clustering(graphdataset) 
-    draw_vor(pos, partition)
+
+    coor_lis = []
+    for p in range(0, len(pos.keys())):
+        coor_lis.append(pos[str(p)])
+    vor = Voronoi(np.stack(coor_lis))
+    
+    colorRegions(vor)
+    
+    voronoi_plot_2d(vor, show_vertices=False)
+    plt.show()
+
+    #partition = node_clustering(graphdataset) 
+    #draw_vor(pos, partition)
