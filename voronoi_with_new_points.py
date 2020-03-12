@@ -9,8 +9,9 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
 from scipy.spatial import Voronoi, voronoi_plot_2d
+from random import uniform
 
-def construct_graph(fname, embedding='force-directed'):
+def construct_graph(fname, node_weight_name='weight', embedding='force-directed'):
     """
     read the graph from .gv file
     and construct the graph with the embedding algorithm
@@ -18,6 +19,7 @@ def construct_graph(fname, embedding='force-directed'):
     input
     fname: str, file name
     embedding: str, embedding algorithm
+    node_weight_name: name of node weight
     ------------------------------------------------------
     returns
     graphdataset: nx.Graph object
@@ -26,9 +28,12 @@ def construct_graph(fname, embedding='force-directed'):
     # a traditional graph
     graphdataset = nx.Graph(nx.drawing.nx_pydot.read_dot(fname))
 
-    #change the weights into ints
+    #change the weights into ints if available
     for i in graphdataset.edges:
         graphdataset.edges[i]['weight']=int(re.findall(r'[0-9]+', (graphdataset.edges[i]['weight']))[0])
+        
+    for i in graphdataset.nodes:
+        graphdataset.nodes[i][node_weight_name] = float(graphdataset.nodes[i][node_weight_name].strip("\""))
 
     # set coordinates for vertices using the corresponding embedding algorithm
     if(embedding == 'force-directed'):
@@ -71,7 +76,7 @@ def merge_vor(ridge_points, ridge_vertices, regions, point_region, com_points):
             pair = []
             for v in com_regions[j]:
                 if(v in com_regions[i]): pair.append(v)
-            if(len(pair) == 0): continue
+            if(len(pair) == 0): continue #todo: check the situation that len(pair)==1 or more than 2 ???
             assert len(pair) == 2, [pair, com_regions[i], com_regions[j]]
             vertices_pair.append(pair)
 
@@ -89,21 +94,23 @@ def merge_vor(ridge_points, ridge_vertices, regions, point_region, com_points):
 
     return com_regions[1:], region_indices[1:], points_pair, vertices_pair
     
-def add_boundary_points(pos,partion, num_ps, length, width):
+def add_boundary_points(position,partition_group, num_ps, length, width,graph):
     # add boundary points to every original nodes
     # merge into larger communities with these partions
     
     points_location = []
-    for each_pos in pos:
-        print(each_pos)
-        bound_points_each = add_boundary_point_each(pos[each_pos], num_ps, length, width)
-        bound_labels = [ str(each_pos)+'_'+str(i) for i in range(num_ps)]
-        partion.update(dict.fromkeys(bound_labels,partion[each_pos]))
+    label_c = len(position)
+    for each_pos in position:
+        ratio_lw = 1/(1 + np.exp(graph.nodes[each_pos]['weight']))
+        bound_points_each = add_boundary_point_each(position[each_pos], num_ps, length*ratio_lw, width*ratio_lw)
+        bound_labels = [ label_c+i for i in range(num_ps)]
+        label_c = label_c + num_ps
+        partition_group.update(dict.fromkeys(bound_labels,partition_group[each_pos]))
         points_location.extend(bound_points_each)
         
     points_location_array = np.array(points_location)
         
-    return points_location_array,partion
+    return points_location_array, partition_group
         
 
     
@@ -150,7 +157,7 @@ def gencoordinates(m, n, nodes_pos,r,num_rp):
         if len(seen) == num_rp:
             return seen
 
-def draw_vor(pos, partition,num_ps,length,width,r,num_rp):
+def draw_vor(graph,pos, partition,num_ps,length,width,r,num_rp):
 
     # stack coordinates of nodes in coor_lis to draw the Voronoi Diagram
     # indices of coor_lis correspond to the node
@@ -159,11 +166,11 @@ def draw_vor(pos, partition,num_ps,length,width,r,num_rp):
     #for p in pos.keys():
         coor_lis.append(pos[str(p)])
     vorpoints = np.stack(coor_lis)
-    #vor = Voronoi(vorpoints)
+    
     
         
     # add boundary points for existing points with partitions
-    boundary_points, partion  = add_boundary_points(pos,partion, num_ps, length, width)
+    boundary_points, partition2  = add_boundary_points(pos,partition, num_ps, length, width,graph)
     vorpoints2 = np.concatenate((vorpoints, boundary_points))
     
     # add random long distance points
@@ -172,12 +179,12 @@ def draw_vor(pos, partition,num_ps,length,width,r,num_rp):
     
     vorpoints3 = np.concatenate((vorpoints, boundary_points, random_points))
     
-    
+    vor = Voronoi(vorpoints3)
     
     # build dictionary to store community info
     # com_node = {community: [nodes in community]}
     com_node = {}
-    for p, com in partition.items():
+    for p, com in partition2.items():
         com_node.setdefault(com, []).append(p)
     
 
@@ -226,4 +233,4 @@ def draw_vor(pos, partition,num_ps,length,width,r,num_rp):
 if(__name__ == '__main__'):
     graphdataset, pos = construct_graph("gd.gv")
     partition = node_clustering(graphdataset)
-    draw_vor(pos, partition, 40, 0.4,0.2, 0.6, 500)
+    draw_vor(graphdataset, pos, partition, 40, 0.1,0.1, 0.2, 100)

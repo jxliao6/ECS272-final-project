@@ -32,7 +32,7 @@ def construct_graph(fname, embedding='force-directed'):
 
     # set coordinates for vertices using the corresponding embedding algorithm
     if(embedding == 'force-directed'):
-        pos = nx.spring_layout(graphdataset, k=1/math.pow(len(graphdataset), 0.3))
+        pos = nx.spring_layout(graphdataset, k=1/math.pow(len(graphdataset), 0.3),scale=10)
 
     return graphdataset, pos
 
