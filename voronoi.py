@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
 from scipy.spatial import Voronoi, voronoi_plot_2d
+
 #from matplotlib.patches import Polygon
 
 
@@ -178,8 +179,6 @@ def colorRegions(vor):
                         neighbors[id2].remove(id)
                 del neighbors[id]
                 break
-        
-        
             # elif len(region_id[id]) == 5: #Second Case
             #     n1 = -1
             #     n2 = -1
@@ -202,20 +201,33 @@ def colorRegions(vor):
             #                     break
             #     if n1 == -1 or n2 == -1: #debug
             #         print("n1 and n2 not found!!!")
-            #     for
 
-        # for id in tobe_removed:
-        #     del neighbors[id]
-    #print(len(id_stack))
-    color_dict = {}
+
+    color_dict = {} #region-color mapping
+    color_list = ['red','green','blue','orange','black','pink']
+    color_freq = {}
+    for color in color_list:
+        color_freq[color] = 0
+
     while len(id_stack) > 0: #deciding colors in each region
-        color_list = ['red','green','blue','orange','black','white']
+        temp_list = color_list.copy()
         id = id_stack.pop()
         for id2 in neighbors_copy[id]:
-            if id2 in color_dict and color_dict[id2] in color_list:
-                color_list.remove(color_dict[id2])
-        color_dict[id] = color_list[0]
-
+            if id2 in color_dict and color_dict[id2] in temp_list:
+                temp_list.remove(color_dict[id2])
+        
+        #least used color first
+        leastColor = temp_list[0]
+        leastCount = color_freq[leastColor]
+        for color in temp_list:
+            if color_freq[color] < leastCount:
+                leastColor = color
+                leastCount = color_freq[color]
+        color_dict[id] = leastColor
+        color_freq[leastColor] = color_freq[leastColor] + 1
+        
+    for color in color_freq:
+        print(color + ": " + str(color_freq[color]))
     
     for id in region_id: # assign color for each region
         if not -1 in region_id[id]:
@@ -242,7 +254,7 @@ if(__name__ == '__main__'):
     vor = Voronoi(np.stack(coor_lis))
     
     colorRegions(vor)
-    
+
     voronoi_plot_2d(vor, show_vertices=False)
     plt.show()
 
