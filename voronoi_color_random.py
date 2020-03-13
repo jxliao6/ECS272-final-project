@@ -11,6 +11,7 @@ import numpy as np
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from random import uniform
 
+
 #from matplotlib.patches import Polygon
 
 
@@ -250,7 +251,7 @@ def colorRegions(vor):
 
 
     color_dict = {} #region-color mapping
-    color_list = ['#fe8b80','#fecc81','#fde281','#b9e39c','#a0cdde','#a392ed','#e180fe']
+    color_list = ['#FE2712','#FB9902','#B2D732','#347C98','#0247FE','#8601AF','#C21460']
     color_freq = {}
     for color in color_list:
         color_freq[color] = 0
@@ -278,7 +279,8 @@ def colorRegions(vor):
     for id in region_id: # assign color for each region
         if not -1 in region_id[id]:
             polygon = [vor.vertices[i] for i in region_id[id]]
-            plt.fill(*zip(*polygon), color = color_dict[id])
+            plt.fill(*zip(*polygon), color = color_dict[id], alpha = 0.4)
+
 
 
 # def colorRegions2(vor):
@@ -307,8 +309,11 @@ if(__name__ == '__main__'):
     vor = Voronoi(vorpoints2)
     
     colorRegions(vor)
-
-    voronoi_plot_2d(vor, show_vertices=False)
+    
+    #voronoi_plot_2d(vor, show_vertices=False)
+    
+    plt.xlim(vor.min_bound[0] - 0.1, vor.max_bound[0] + 0.1)
+    plt.ylim(vor.min_bound[1] - 0.1, vor.max_bound[1] + 0.1)
     plt.show()
 
     #partition = node_clustering(graphdataset) 
