@@ -130,8 +130,8 @@ def gencoordinates(m, n, nodes_pos,r,num_rp):
         if indicator == True:
             seen.append((x,y))
         
-        if len(seen)%10==0 and len(seen)> 1:
-            print(len(seen),count)
+        # if len(seen)%10==0 and len(seen)> 1:
+        #     print(len(seen),count)
     
         if len(seen) == num_rp:
             return seen
@@ -163,11 +163,32 @@ def draw_vor(pos, partition):
     
     voronoi_plot_2d(vor, show_vertices=False)
     plt.show()
-    
+
+def isSameRegion(r1, r2):
+    if len(r1) != len(r2):
+        return False
+    for i in range(len(r1)):
+        if r1[i] != r2[i]:
+            return False
+    return True
+
 def colorRegions(vor):
+    #ignore virtual regions
+    real_regions = vor.regions.copy()
+    virtual_regions = []
+    for i in range(500):
+        virtual_regions.append(vor.regions[vor.point_region[len(vor.point_region) - i - 1]])
+
+    for vregion in virtual_regions:
+        for rregion in real_regions:
+            if isSameRegion(vregion, rregion):
+                real_regions.remove(rregion)
+                break
+                        
+
     region_id = {} #dict{key: id, value: list of vertices(==region)}
     idcount = 0
-    for region in vor.regions:
+    for region in real_regions:
         region_id[idcount] = region
         idcount += 1
 
@@ -229,7 +250,7 @@ def colorRegions(vor):
 
 
     color_dict = {} #region-color mapping
-    color_list = ['red','green','blue','orange','black','pink']
+    color_list = ['#fe8b80','#fecc81','#fde281','#b9e39c','#a0cdde','#a392ed','#e180fe']
     color_freq = {}
     for color in color_list:
         color_freq[color] = 0
@@ -277,9 +298,10 @@ if(__name__ == '__main__'):
     for p in range(0, len(pos.keys())):
         coor_lis.append(pos[str(p)])
     vorpoints = np.stack(coor_lis)
-        
     
-    random_points = gencoordinates(-10, 10,vorpoints,0.01,500)
+
+    size_of_random_points = 500
+    random_points = gencoordinates(-10, 10, vorpoints, 0.01, size_of_random_points)
     vorpoints2 = np.concatenate((np.stack(coor_lis), random_points))
     
     vor = Voronoi(vorpoints2)
