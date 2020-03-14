@@ -311,6 +311,20 @@ if(__name__ == '__main__'):
     colorRegions(vor)
     
     #voronoi_plot_2d(vor, show_vertices=False)
+
+    #Text
+    
+    for p in pos:
+        plt.text(pos[p][0], pos[p][1], graphdataset.nodes[p]['label'].split()[-1][:-1], ha='center', va='center', fontsize = 5)
+    #     xlist = []
+    #     for x in pos[p]:
+    #         print(p)
+        #ylist = [r[1] for r in pos[p]]
+
+        # x = sum(xlist) / len(xlist)
+        # y = sum(ylist) / len(ylist)
+        # plt.text(x, y, graphdataset.nodes[p]['label'].split()[-1][:-1], ha='center', va='center', fontsize = 5)
+        #print("X: " + str(pos[p][0]) + "Y: " + str(pos[p][1]) + graphdataset.nodes[p]['label'])
     
     plt.xlim(vor.min_bound[0] - 0.1, vor.max_bound[0] + 0.1)
     plt.ylim(vor.min_bound[1] - 0.1, vor.max_bound[1] + 0.1)
