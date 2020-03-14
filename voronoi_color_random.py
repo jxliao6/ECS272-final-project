@@ -322,9 +322,10 @@ if(__name__ == '__main__'):
     
     #voronoi_plot_2d(vor, show_vertices=False)
 
-    #Text
+    #Text and edges
     for p in pos:
         plt.text(pos[p][0], pos[p][1], graphdataset.nodes[p]['label'].split()[-1][:-1], ha='center', va='center', fontsize = 5)
+    nx.draw_networkx_edges(graphdataset, pos=pos,alpha=0.2)
         
     
     #     xlist = []
