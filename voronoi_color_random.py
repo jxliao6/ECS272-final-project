@@ -136,6 +136,15 @@ def gencoordinates(m, n, nodes_pos,r,num_rp):
     
         if len(seen) == num_rp:
             return seen
+            
+def gen_canvas_bound_coordiates(lim_s,lim_l):
+    point_range = np.linspace(lim_s,lim_l,50)
+    left = [(lim_s,i)  for i in point_range]
+    right = [(lim_l,i)  for i in point_range]
+    top = [(i,lim_l)  for i in point_range]
+    bottom = [(i,lim_s)  for i in point_range]
+            
+    return np.array(left+right+top+bottom)
 
 def draw_vor(pos, partition):
 
@@ -173,11 +182,11 @@ def isSameRegion(r1, r2):
             return False
     return True
 
-def colorRegions(vor):
+def colorRegions(vor,random_points_num):
     #ignore virtual regions
     real_regions = vor.regions.copy()
     virtual_regions = []
-    for i in range(500):
+    for i in range(random_points_num):
         virtual_regions.append(vor.regions[vor.point_region[len(vor.point_region) - i - 1]])
 
     for vregion in virtual_regions:
@@ -277,9 +286,9 @@ def colorRegions(vor):
         print(color + ": " + str(color_freq[color]))
     
     for id in region_id: # assign color for each region
-        if not -1 in region_id[id]:
-            polygon = [vor.vertices[i] for i in region_id[id]]
-            plt.fill(*zip(*polygon), color = color_dict[id], alpha = 0.4)
+       # if not -1 in region_id[id]:
+        polygon = [vor.vertices[i] for i in region_id[id]]
+        plt.fill(*zip(*polygon), color = color_dict[id], alpha = 0.4)
 
 
 
@@ -304,18 +313,20 @@ if(__name__ == '__main__'):
 
     size_of_random_points = 500
     random_points = gencoordinates(-10, 10, vorpoints, 0.01, size_of_random_points)
-    vorpoints2 = np.concatenate((np.stack(coor_lis), random_points))
+    canvas_bound_points = gen_canvas_bound_coordiates(-11,11)
+    vorpoints2 = np.concatenate((np.stack(coor_lis),canvas_bound_points, random_points))
     
     vor = Voronoi(vorpoints2)
     
-    colorRegions(vor)
+    colorRegions(vor,size_of_random_points+len(canvas_bound_points))
     
     #voronoi_plot_2d(vor, show_vertices=False)
 
     #Text
-    
     for p in pos:
         plt.text(pos[p][0], pos[p][1], graphdataset.nodes[p]['label'].split()[-1][:-1], ha='center', va='center', fontsize = 5)
+        
+    
     #     xlist = []
     #     for x in pos[p]:
     #         print(p)
