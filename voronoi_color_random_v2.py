@@ -32,8 +32,6 @@ def construct_graph(fname, embedding='force-directed'):
     """
     # a traditional graph
     graphdataset = nx.Graph(nx.drawing.nx_pydot.read_dot(fname))
-    graphdataset  = nx.relabel.convert_node_labels_to_integers(graphdataset)
-
 
     #change the weights into ints
     for i in graphdataset.edges:
@@ -231,19 +229,19 @@ def colorRegions(vor,random_points_num, partition):
 
     cluster_id = {} #{key: cluster id, value: list of region id}
     for r in region_id:
-        if partition[r] not in cluster_id:
-            cluster_id[partition[r]] = []
-        elif r in cluster_id[partition[r]]:
+        if partition[str(r)] not in cluster_id:
+            cluster_id[partition[str(r)]] = []
+        elif r in cluster_id[partition[str(r)]]:
             continue
-        cluster_id[partition[r]].append(r)
+        cluster_id[partition[str(r)]].append(r)
 
     cluster_neighbor = {} #{key: cluster id, value: list of region's neighbor id}
     for c in cluster_id:
         cluster_neighbor[c] = []
         for r in cluster_id[c]:
             for n in neighbors[r]:
-                if partition[n] not in cluster_neighbor[c]:
-                    cluster_neighbor[c].append(partition[n])
+                if partition[str(n)] not in cluster_neighbor[c]:
+                    cluster_neighbor[c].append(partition[str(n)])
 
     # for c in cluster_neighbor:
     #     print(cluster_neighbor[c])
@@ -253,10 +251,10 @@ def colorRegions(vor,random_points_num, partition):
 
     cluster_stack = [] #coloring order
     replace_dic = {}
-    print(len(region_id))
+    #print(len(region_id))
     while len(cluster_neighbor) > 0: #calculate the order of coloring
         #tobe_removed = []
-        print(len(cluster_neighbor))
+        #print(len(cluster_neighbor))
         for id in cluster_neighbor:
             print(len(cluster_neighbor[id]))
             if len(cluster_neighbor[id]) < 12: #First Case
@@ -353,43 +351,7 @@ def colorRegions(vor,random_points_num, partition):
             plt.fill(*zip(*polygon), color = color_dict[r])
 
 
-def add_boundary_points(position,partition_group, num_ps, length, width,graph):
-    # add boundary points to every original nodes
-    # merge into larger communities with these partions
-    
-    points_location = []
-    label_c = len(position)
-    for each_pos in position:
-        ratio_lw = 1#1/(1 + np.exp(graph.nodes[each_pos]['weight']))
-        bound_points_each = add_boundary_point_each(position[each_pos], num_ps, length*ratio_lw, width*ratio_lw)
-        bound_labels = [ label_c+i for i in range(num_ps)]
-        label_c = label_c + num_ps
-        partition_group.update(dict.fromkeys(bound_labels,partition_group[each_pos]))
-        points_location.extend(bound_points_each)
-        
-    points_location_array = np.array(points_location)
-        
-    return points_location_array, partition_group
-        
 
-    
-def add_boundary_point_each(center_point,numofp,length,width):
-
-    length_points = int(length/(width+length)*numofp)
-    width_points = numofp - length_points
-    bottom_points = int(length_points/2)
-    top_points = length_points - bottom_points
-    left_points  = int(width_points/2)
-    right_points = width_points - left_points
-    #print(bottom_points,top_points,left_points,right_points)
-    
-    bottoms = [(i,center_point[1]-width/2) for i in np.linspace(center_point[0] - length/2,center_point[0] + length/2,bottom_points)]
-    tops = [(i,center_point[1]+width/2) for i in np.linspace(center_point[0] - length/2,center_point[0] + length/2,top_points)]
-    lefts = [(center_point[0]-length/2,i) for i in np.linspace(center_point[1] - width/2,center_point[1] + width/2,left_points)]
-    rights = [(center_point[0]+length/2,i) for i in np.linspace(center_point[1] - width/2,center_point[1] + width/2,right_points)]
-    return_points = bottoms + tops+lefts+rights
-    
-    return(return_points)
 
 # def colorRegions2(vor):
 #     regions, vertices = voronoi_finite_polygons_2d(vor)
@@ -403,30 +365,24 @@ def add_boundary_point_each(center_point,numofp,length,width):
 
 if(__name__ == '__main__'):
     graphdataset, pos = construct_graph("gd.gv")
-    
-    #clustering
-    partition = node_clustering(graphdataset)
 
     coor_lis = []
     for p in range(0, len(pos.keys())):
-        coor_lis.append(pos[p])
+        coor_lis.append(pos[str(p)])
     vorpoints = np.stack(coor_lis)
     
-    # add boundary points for existing points with partitions
-    boundary_points, partition2  = add_boundary_points(pos,partition, 40, 0.05, 0.05,graphdataset)
-    vorpoints2 = np.concatenate((vorpoints, boundary_points))
-    
-    # add random points
+
     size_of_random_points = 500
     random_points = gencoordinates(-10, 10, vorpoints, 0.01, size_of_random_points)
     canvas_bound_points = gen_canvas_bound_coordiates(-11,11)
-    vorpoints3 = np.concatenate((np.stack(coor_lis),boundary_points, canvas_bound_points, random_points))
+    vorpoints2 = np.concatenate((np.stack(coor_lis),canvas_bound_points, random_points))
     
-    vor = Voronoi(vorpoints3)
+    vor = Voronoi(vorpoints2)
     
-    
+    #clustering
+    partition = node_clustering(graphdataset)
     #print(partition)
-    colorRegions(vor,size_of_random_points+len(canvas_bound_points), partition2)
+    colorRegions(vor,size_of_random_points+len(canvas_bound_points), partition)
     
     #voronoi_plot_2d(vor, show_vertices=False)
 
