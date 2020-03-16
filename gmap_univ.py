@@ -458,9 +458,16 @@ def solver(clustering_algorithm, k):
     plt.ylim(vor.min_bound[1] - 0.1, vor.max_bound[1] + 0.1)
     #plt.show()
     #draw_vor(pos, partition)
+    """
+    ax2 = fig.add_subplot()
+    nx.draw(graphdataset,pos=pos,scale=10,\
+        with_labels=True,node_shape="s",node_size=450,edge_color="grey",alpha=1, \
+			node_color=list(partition.values()), cmap=plt.cm.Set3)
+    """
 
-    return fig
+
+    return fig, graphdataset, pos
 
 if(__name__ == '__main__'):
-    fig = solve('modularity', 8)
+    fig, graphdataset, pos = solver('modularity', 8)
     plt.show()

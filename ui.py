@@ -4,6 +4,7 @@ matplotlib.use('Agg')
 from io import BytesIO
 import base64
 import gmap_univ as gmap
+import simple_univ as orgGraph
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objects as go
@@ -69,8 +70,10 @@ app.layout=html.Div([
     
     html.Div(
         [
-            html.Img(id='gmap_plot', src='')
+            html.Img(id='gmap_plot', src=''),
+            html.Img(id='graph_plot', src='')
         ],
+        style={'display': 'inline-block'},
         id='gmap_div'
         )
 ])
@@ -96,7 +99,10 @@ def k_selection_value(available_options):
         return 8
 
 @app.callback(
-    Output(component_id='gmap_plot', component_property='src'),
+    [
+        Output(component_id='gmap_plot', component_property='src'),
+        Output(component_id='graph_plot', component_property='src')
+    ],
     [
         Input(component_id='dataset_selection', component_property='value'),
         Input(component_id='clustering_selection', component_property='value'),
@@ -105,9 +111,12 @@ def k_selection_value(available_options):
 )
 def update_gmap(dataset, algorithm, k):
     if(dataset == 'Universities'):
-        fig = gmap.solver(algorithm, k)
-    out_url = fig_to_uri(fig)
-    return out_url
+        fig1, graphdataset, pos = gmap.solver(algorithm, k)
+        fig2 = orgGraph.solver(graphdataset, pos)
+
+    out_url1 = fig_to_uri(fig1)
+    out_url2 = fig_to_uri(fig2)
+    return out_url1, out_url2
 
 if __name__ == '__main__':
     app.run_server(debug=True)
