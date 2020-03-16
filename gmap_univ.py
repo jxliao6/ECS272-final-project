@@ -456,6 +456,7 @@ def solver(clustering_algorithm, k):
     
     plt.xlim(vor.min_bound[0] - 0.1, vor.max_bound[0] + 0.1)
     plt.ylim(vor.min_bound[1] - 0.1, vor.max_bound[1] + 0.1)
+    plt.axis('off')
     #plt.show()
     #draw_vor(pos, partition)
     """
