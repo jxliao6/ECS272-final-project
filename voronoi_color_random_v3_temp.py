@@ -413,20 +413,20 @@ if(__name__ == '__main__'):
     vorpoints = np.stack(coor_lis)
     
     # add boundary points for existing points with partitions
-    boundary_points, partition2  = add_boundary_points(pos,partition, 40, 0.05, 0.05,graphdataset)
-    vorpoints2 = np.concatenate((vorpoints, boundary_points))
+    #boundary_points, partition2  = add_boundary_points(pos,partition, 40, 0.05, 0.05,graphdataset)
+    #vorpoints2 = np.concatenate((vorpoints, boundary_points))
     
     # add random points
-    size_of_random_points = 500
-    random_points = gencoordinates(-10, 10, vorpoints, 0.01, size_of_random_points)
+    size_of_random_points = 1000
+    random_points = gencoordinates(-10, 10, vorpoints, 0.02, size_of_random_points)
     canvas_bound_points = gen_canvas_bound_coordiates(-11,11)
-    vorpoints3 = np.concatenate((np.stack(coor_lis),boundary_points, canvas_bound_points, random_points))
+    vorpoints3 = np.concatenate((np.stack(coor_lis), canvas_bound_points, random_points))
     
     vor = Voronoi(vorpoints3)
     
     
     #print(partition)
-    colorRegions(vor,size_of_random_points+len(canvas_bound_points), partition2)
+    colorRegions(vor,size_of_random_points+len(canvas_bound_points), partition)
     
     #voronoi_plot_2d(vor, show_vertices=False)
 
