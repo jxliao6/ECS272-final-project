@@ -16,9 +16,14 @@ def solver(graphdataset, pos):
 	partition = community.best_partition(graphdataset)
 	#pos = nx.spring_layout(graphdataset, k=1/math.pow(len(graphdataset), 0.3),scale=10)
 
+	for i in graphdataset.nodes:
+		graphdataset.nodes[i]['label'] = graphdataset.nodes[i]['label'].strip("\"").split("\\n")[0]
+	node_labels = nx.get_node_attributes(graphdataset,'label')
+
 	nx.draw(graphdataset,pos=pos,scale=10,\
-        with_labels=True,node_shape="s",node_size=450,edge_color="grey",alpha=1, \
+        with_labels=True,node_shape="s",node_size=300, font_size = 5, edge_color="grey",alpha=1, \
 			node_color=list(partition.values()), cmap=plt.cm.Set3)
+	nx.draw_networkx_labels(graphdataset,pos = pos, labels=node_labels)
 
 	return fig
 
