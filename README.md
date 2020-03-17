@@ -20,3 +20,7 @@ Python 3.6 or later.
 ⋅ graphviz
 ⋅ pydot
 ⋅ networkx
+
+4. User Interface
+
+![alt text](https://github.com/thalia-L/ECS272-final-project/blob/master/fig/Screenshot.png "ScreenShot 1")
