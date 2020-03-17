@@ -12,4 +12,11 @@ Python 3.6 or later.
 
 3. Library
 
-⋅⋅* Dash
+⋅ Dash
+⋅ matplotlib
+⋅ plotly
+⋅ scipy
+⋅ community
+⋅ graphviz
+⋅ pydot
+⋅ networkx
