@@ -41,7 +41,7 @@ algorithm_option = {
 
 app.layout=html.Div([
     html.H1(
-            children='Gmaps',
+            children='GMap Visualization VS Original Graph',
             style={'textAlign': 'center'}
         ),
     
