@@ -12,8 +12,6 @@ from scipy.spatial import Voronoi, voronoi_plot_2d
 from random import uniform
 from sklearn.cluster import KMeans
 
-#from matplotlib.patches import Polygon
-
 def construct_graph(fname, embedding='force-directed'):
     """
     read the graph from .gv file
@@ -31,10 +29,10 @@ def construct_graph(fname, embedding='force-directed'):
     graphdataset = nx.Graph(nx.drawing.nx_pydot.read_dot(fname))
     graphdataset  = nx.relabel.convert_node_labels_to_integers(graphdataset)
 
+
     #change the weights into ints
-    if fname == "gd.gv":
-        for i in graphdataset.edges:
-            graphdataset.edges[i]['weight']=int(re.findall(r'[0-9]+', (graphdataset.edges[i]['weight']))[0])
+    for i in graphdataset.edges:
+        graphdataset.edges[i]['weight']=int(re.findall(r'[0-9]+', (graphdataset.edges[i]['weight']))[0])
 
     # set coordinates for vertices using the corresponding embedding algorithm
     if(embedding == 'force-directed'):
@@ -136,6 +134,9 @@ def gencoordinates(m, n, nodes_pos,r,num_rp):
     
         if indicator == True:
             seen.append((x,y))
+        
+        # if len(seen)%10==0 and len(seen)> 1:
+        #     print(len(seen),count)
     
         if len(seen) == num_rp:
             return seen
@@ -155,7 +156,7 @@ def draw_vor(pos, partition):
     # indices of coor_lis correspond to the node
     coor_lis = []
     for p in range(0, len(pos.keys())):
-        coor_lis.append(pos[p])
+        coor_lis.append(pos[str(p)])
     vor = Voronoi(np.stack(coor_lis))
     
     # build dictionary to store community info
@@ -163,6 +164,8 @@ def draw_vor(pos, partition):
     com_node = {}
     for p, com in partition.items():
         com_node.setdefault(com, []).append(p)
+
+    #print(vor.regions)
 
     # merge voronoi cells for each community
     for p_lis in com_node.values():
@@ -198,6 +201,7 @@ def colorRegions(vor,random_points_num, partition):
                         
 
     region_id = {} #{key: point id, value: list of vertices(==region)}
+    #print(len(vor.points) - random_points_num)
     for p in range(len(vor.points) - random_points_num):
         for r in real_regions:
             if isSameRegion(vor.regions[vor.point_region[p]], r):
@@ -229,7 +233,6 @@ def colorRegions(vor,random_points_num, partition):
 
     cluster_id = {} #{key: cluster id, value: list of region id}
     for r in region_id:
-        
         if partition[r] not in cluster_id:
             cluster_id[partition[r]] = []
         elif r in cluster_id[partition[r]]:
@@ -247,7 +250,7 @@ def colorRegions(vor,random_points_num, partition):
     neighbors_copy = cluster_neighbor.copy()
     cluster_stack = [] #coloring order
     replace_dic = {}
-    #print(len(region_id))
+    print(len(region_id))
     while len(cluster_neighbor) > 0: #calculate the order of coloring
         #tobe_removed = []
         print(len(cluster_neighbor))
@@ -262,6 +265,7 @@ def colorRegions(vor,random_points_num, partition):
                 del cluster_neighbor[id]
                 break
 
+    print("here")
     color_dict = {} #region-color mapping
     color_list = ['#FE2712','#FC600A','#FB9902','#FCCC1A','#FEFE33','#B2D732','#66B032','#347C98','#0247FE','#4424D6','#8601AF','#C21460']
     color_freq = {}
@@ -306,7 +310,7 @@ def add_boundary_points(position,partition_group, num_ps, length, width,graph):
     points_location = []
     label_c = len(position)
     for each_pos in position:
-        ratio_lw = np.sqrt(float(graph.nodes[each_pos]['fontsize'].strip('"'))/12.5)
+        ratio_lw = 1#1/(1 + np.exp(graph.nodes[each_pos]['weight']))
         bound_points_each = add_boundary_point_each(position[each_pos], num_ps, length*ratio_lw, width*ratio_lw)
         bound_labels = [ label_c+i for i in range(num_ps)]
         label_c = label_c + num_ps
@@ -337,16 +341,16 @@ def add_boundary_point_each(center_point,numofp,length,width):
     
     return(return_points)
 
+
 def solver(clustering_algorithm, k):
     fig = plt.figure(figsize=(9, 9))
-
-    # read graph data
-    graphdataset, pos = construct_graph("./Dataset/univ.gv")
+    # read graph dataset
+    graphdataset, pos = construct_graph("./Dataset/gd.gv")
 
     # stack coordinates for Voronoi diagram
     coor_lis = []
     point_lis = []
-    for p in pos.keys():
+    for p in range(0, len(pos.keys())):
         coor_lis.append(pos[p])
         point_lis.append(p)
     vorpoints = np.stack(coor_lis)
@@ -354,29 +358,24 @@ def solver(clustering_algorithm, k):
     #clustering
     partition = node_clustering(graphdataset, vorpoints, point_lis, clustering_algorithm, k)
     
-    # add boundary points for existing points with partitions
-    boundary_points, partition2  = add_boundary_points(pos,partition, 40, 0.2, 0.2,graphdataset)
-    vorpoints2 = np.concatenate((vorpoints, boundary_points))
-    
-    print("finish vorpoint2!")
-    
     # add random points
-    size_of_random_points = 2000
-    random_points = gencoordinates(-10, 10, vorpoints, 0.5, size_of_random_points)
+    size_of_random_points = 1000
+    random_points = gencoordinates(-10, 10, vorpoints, 0.02, size_of_random_points)
     canvas_bound_points = gen_canvas_bound_coordiates(-11,11)
-    vorpoints3 = np.concatenate((np.stack(coor_lis),boundary_points, canvas_bound_points, random_points))
-    
-    print("finish vorpoint3!")
+    vorpoints3 = np.concatenate((np.stack(coor_lis), canvas_bound_points, random_points))
     
     vor = Voronoi(vorpoints3)
     
-    # coloring regions
-    colorRegions(vor,size_of_random_points+len(canvas_bound_points), partition2)
+    
+    #print(partition)
+    colorRegions(vor,size_of_random_points+len(canvas_bound_points), partition)
+    
+    #voronoi_plot_2d(vor, show_vertices=False)
 
     #Text and edges
     for p in pos:
-        plt.text(pos[p][0], pos[p][1], graphdataset.nodes[p]['label'].strip("\"").split("\\n")[0], ha='center', va='center', fontsize = 5)
-
+        plt.text(pos[p][0], pos[p][1], graphdataset.nodes[p]['label'].split()[-1][:-1], ha='center', va='center', fontsize = 5)
+    #nx.draw_networkx_edges(graphdataset, pos=pos,alpha=0.2)
     
     plt.xlim(vor.min_bound[0] - 0.1, vor.max_bound[0] + 0.1)
     plt.ylim(vor.min_bound[1] - 0.1, vor.max_bound[1] + 0.1)

@@ -3,8 +3,10 @@ import matplotlib
 matplotlib.use('Agg')
 from io import BytesIO
 import base64
-import gmap_univ as gmap
-import simple_univ as orgGraph
+import gmap_univ as uniGmap
+import simple_univ as uniGraph
+import gmap_gd as gdGmap
+import simple_gd as gdGraph
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objects as go
@@ -111,8 +113,11 @@ def k_selection_value(available_options):
 )
 def update_gmap(dataset, algorithm, k):
     if(dataset == 'Universities'):
-        fig1, graphdataset, pos = gmap.solver(algorithm, k)
-        fig2 = orgGraph.solver(graphdataset, pos)
+        fig1, graphdataset, pos = uniGmap.solver(algorithm, k)
+        fig2 = uniGraph.solver(graphdataset, pos)
+    elif(dataset == 'GD'):
+        fig1, graphdataset, pos = gdGmap.solver(algorithm, k)
+        fig2 = gdGraph.solver(graphdataset, pos)
 
     out_url1 = fig_to_uri(fig1)
     out_url2 = fig_to_uri(fig2)

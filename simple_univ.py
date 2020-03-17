@@ -12,7 +12,7 @@ import community
 
 def solver(graphdataset, pos):
 	fig = plt.figure(figsize=(9, 9))
-	#graphdataset = nx.Graph(nx.drawing.nx_pydot.read_dot("univ.gv"))
+	#graphdataset = nx.Graph(nx.drawing.nx_pydot.read_dot("./Dataset/univ.gv"))
 	partition = community.best_partition(graphdataset)
 	#pos = nx.spring_layout(graphdataset, k=1/math.pow(len(graphdataset), 0.3),scale=10)
 
